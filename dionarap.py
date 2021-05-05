@@ -97,13 +97,40 @@ def replacement(match):
     inserted_instructions = match.group(3)
     return inserted_instructions + b'const-string ' + reg + b', "' + get_s(id) + b'"'
 
+def replacement2(match):
+    id1 = int(match.group(2), 0)
+    inserted1 = match.group(3)
+    id2 = int(match.group(5), 0)
+    inserted2 = match.group(6)
+    reg = match.group(7)
+    return (
+        b'const-string ' + reg + b', "' + get_s(id1) + b'"' + inserted1 +
+        b'const-string ' + reg + b', "' + get_s(id2) + b'"' + inserted2)
+
 def change_file(filename):
     with open(filename, "rb") as f:
         content = f.read()
     oldcontent = content
+    # first check for special if-then style string substitution
+    content = re.sub(
+        rb"const\-wide ([vp]\d+), (\-?0x[0-9a-f]+)L(\s+"
+        rb"goto :goto_(\w+)\s+"
+        rb":cond_\w+\s+)"
+        rb"const\-wide \1, (\-?0x[0-9a-f]+)L(\s+"
+        rb":goto_\4\s+)"
+        rb"invoke-static(?:/range)? \{\1(?:\,| \.\.) [vp]\d+\}, " +
+        re.escape(decoder_method) +
+        rb"\(J\)Ljava/lang/String;\s+"
+        rb"move-result-object ([vp]\d+)\s+",
+        replacement2, content, flags=re.DOTALL)
+    # then handle the simpler case
     content = re.sub(
         rb"const\-wide ([vp]\d+), (\-?0x[0-9a-f]+)L\s+"
-        rb"((?:(?!const\-wide).)*?)" # anything but const-wide
+        # between the const-wide and the method call anything can be inserted,
+        # except for:
+        #     another const-wide
+        #     a label that is not :try_*
+        rb"((?:(?!const\-wide)(?!:(?!try_)).)*?)"
         rb"invoke-static(?:/range)? \{\1(?:\,| \.\.) [vp]\d+\}, " +
         re.escape(decoder_method) +
         rb"\(J\)Ljava/lang/String;(?:\s+move-result-object ([vp]\d+))?",
