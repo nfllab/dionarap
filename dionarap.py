@@ -49,7 +49,7 @@ class LameRandom:
 decoder_regex = re.compile(
         rb"\.class public (?P<classname>L[\w$/]+;)\s+"
         rb"\.super Ljava/lang/Object;.*"
-        rb"\.method static constructor <clinit>\(\)V\s+"
+        rb"\.method (?:public )?static constructor <clinit>\(\)V\s+"
         rb"\.registers 3\s+"
         rb"const/4 v0, 0x\d+\s+"
         rb"new\-array v0, v0, \[Ljava/lang/String;\s+"
