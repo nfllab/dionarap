@@ -197,7 +197,10 @@ def search_method(directory):
 
 def process(directory):
     search_method(directory)
-    change_files(directory)
+    if decoder_method:
+        change_files(directory)
+    else:
+        print("No decoder was found!")
 
 parser = argparse.ArgumentParser(description='Decoder for https://github.com/MichaelRocks/paranoid.')
 parser.add_argument('directory', nargs='+', help='directory with smali files')
